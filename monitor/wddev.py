@@ -1,37 +1,43 @@
-import os, webdav3
+import os, webdav3, json, getpass
 
-cDir = os.getcwd()
+cDir = os.path.dirname(os.path.abspath(os.sys.argv[0]))
+
 from webdav3.client import Client
 
-test_dir = None
-test_file = None
-test_host = None
+# configure options
+with open('..\\noupload\\config.json', 'r') as F:
+    options = json.load(F)
 
-options = {
-    'webdav_hostname': test_host,
-    'webdav_login': os.environ['ws_user'],
-    'webdav_password': os.environ['ws_pwd'],
-}
+# select aimms or vu configuraiton
+
+# options = options['aimms']
+options = options['vu']
+
+
+test_dir = options['test_dir']
+test_file = options['test_file']
+options['webdav_password'] = getpass.getpass(
+    '\nPlease enter webdav password for \"{}\": '.format(options['webdav_login'])
+)
 
 
 client = Client(options)
-# client.verify = False  # To not check SSL certificates (Default = True)
+client.verify = False  # To not check SSL certificates (Default = True)
 
 
-if __name__ == '__main__':
-    if os.path.exists(os.path.join(cDir, test_file)):
-        os.remove(os.path.join(cDir, test_file))
-        print('Download test file \"{}\" removed.'.format(test_file))
+if os.path.exists(os.path.join(cDir, test_file)):
+    os.remove(os.path.join(cDir, test_file))
+    print('Download test file \"{}\" removed.'.format(test_file))
 
-    print('test_dir exists:', client.check(test_dir))
-    print('test_file exists:', client.check('{}/{}'.format(test_dir, test_file)))
-    print('unknown file exists:', client.check('{}/{}a'.format(test_dir, test_file)))
+print('test_dir exists:', client.check(test_dir))
+print('test_file exists:', client.check('{}/{}'.format(test_dir, test_file)))
+print('unknown file exists:', client.check('{}/{}a'.format(test_dir, test_file)))
 
-    client.download_sync(
-        '{}/{}'.format(test_dir, test_file), os.path.join(cDir, test_file)
+client.download_sync('{}/{}'.format(test_dir, test_file), os.path.join(cDir, test_file))
+print(
+    'Downloaded file \"{}\": {}'.format(
+        test_file, os.path.exists(os.path.join(cDir, test_file))
     )
-    print(
-        'Downloaded file \"{}\": {}'.format(
-            test_file, os.path.exists(os.path.join(cDir, test_file))
-        )
-    )
+)
+
+options['webdav_password'] = None
